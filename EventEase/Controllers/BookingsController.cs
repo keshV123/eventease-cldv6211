@@ -1,4 +1,20 @@
-﻿using System;
+﻿/*
+ * EventEase - CLOUD Assignment Part 2
+ * 
+ * This project was developed using ASP.NET Core MVC scaffolding,
+ * Microsoft documentation, Azure Blob Storage documentation,
+ * and AI-assisted guidance for implementation refinement,
+ * validation logic, and UI improvements.
+ * 
+ * Technologies used:
+ * - ASP.NET Core MVC
+ * - Entity Framework Core
+ * - Azure Blob Storage / Azurite
+ * - SQL Server LocalDB
+ * 
+ * Author: ST10474344
+ */
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,10 +36,21 @@ namespace EventEase.Controllers
         }
 
         // GET: Bookings
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string searchString)
         {
-            var appDbContext = _context.Bookings.Include(b => b.Event);
-            return View(await appDbContext.ToListAsync());
+            var bookings = _context.Bookings
+                .Include(b => b.Event)
+                .ThenInclude(e => e.Venue)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                bookings = bookings.Where(b =>
+                    b.BookingId.ToString().Contains(searchString) ||
+                    b.Event.Title.Contains(searchString));
+            }
+
+            return View(await bookings.ToListAsync());
         }
 
         // GET: Bookings/Details/5
@@ -36,7 +63,9 @@ namespace EventEase.Controllers
 
             var booking = await _context.Bookings
                 .Include(b => b.Event)
+                .ThenInclude(e => e.Venue)
                 .FirstOrDefaultAsync(m => m.BookingId == id);
+
             if (booking == null)
             {
                 return NotFound();
@@ -48,24 +77,54 @@ namespace EventEase.Controllers
         // GET: Bookings/Create
         public IActionResult Create()
         {
-            ViewData["EventId"] = new SelectList(_context.Events, "EventId", "Title");
+            ViewData["EventId"] =
+                new SelectList(_context.Events, "EventId", "Title");
+
             return View();
         }
 
         // POST: Bookings/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("BookingId,CustomerName,Email,Tickets,EventId")] Booking booking)
+        public async Task<IActionResult> Create(
+            [Bind("BookingId,CustomerName,Email,Tickets,StartDate,EndDate,EventId")]
+            Booking booking)
         {
+            bool overlappingBooking = _context.Bookings
+                .Any(b =>
+                    b.EventId == booking.EventId &&
+                    booking.StartDate < b.EndDate &&
+                    booking.EndDate > b.StartDate);
+
+            if (overlappingBooking)
+            {
+                ModelState.AddModelError(
+                    "",
+                    "This event already has a booking during the selected dates.");
+            }
+
+            if (booking.EndDate <= booking.StartDate)
+            {
+                ModelState.AddModelError(
+                    "",
+                    "End date must be after start date.");
+            }
+
             if (ModelState.IsValid)
             {
                 _context.Add(booking);
+
                 await _context.SaveChangesAsync();
+
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["EventId"] = new SelectList(_context.Events, "EventId", "Title", booking.EventId);
+
+            ViewData["EventId"] =
+                new SelectList(_context.Events,
+                               "EventId",
+                               "Title",
+                               booking.EventId);
+
             return View(booking);
         }
 
@@ -78,24 +137,53 @@ namespace EventEase.Controllers
             }
 
             var booking = await _context.Bookings.FindAsync(id);
+
             if (booking == null)
             {
                 return NotFound();
             }
-            ViewData["EventId"] = new SelectList(_context.Events, "EventId", "Title", booking.EventId);
+
+            ViewData["EventId"] =
+                new SelectList(_context.Events,
+                               "EventId",
+                               "Title",
+                               booking.EventId);
+
             return View(booking);
         }
 
         // POST: Bookings/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("BookingId,CustomerName,Email,Tickets,EventId")] Booking booking)
+        public async Task<IActionResult> Edit(
+            int id,
+            [Bind("BookingId,CustomerName,Email,Tickets,StartDate,EndDate,EventId")]
+            Booking booking)
         {
             if (id != booking.BookingId)
             {
                 return NotFound();
+            }
+
+            bool overlappingBooking = _context.Bookings
+                .Any(b =>
+                    b.BookingId != booking.BookingId &&
+                    b.EventId == booking.EventId &&
+                    booking.StartDate < b.EndDate &&
+                    booking.EndDate > b.StartDate);
+
+            if (overlappingBooking)
+            {
+                ModelState.AddModelError(
+                    "",
+                    "This event already has a booking during the selected dates.");
+            }
+
+            if (booking.EndDate <= booking.StartDate)
+            {
+                ModelState.AddModelError(
+                    "",
+                    "End date must be after start date.");
             }
 
             if (ModelState.IsValid)
@@ -103,6 +191,7 @@ namespace EventEase.Controllers
                 try
                 {
                     _context.Update(booking);
+
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
@@ -116,9 +205,16 @@ namespace EventEase.Controllers
                         throw;
                     }
                 }
+
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["EventId"] = new SelectList(_context.Events, "EventId", "Title", booking.EventId);
+
+            ViewData["EventId"] =
+                new SelectList(_context.Events,
+                               "EventId",
+                               "Title",
+                               booking.EventId);
+
             return View(booking);
         }
 
@@ -132,7 +228,9 @@ namespace EventEase.Controllers
 
             var booking = await _context.Bookings
                 .Include(b => b.Event)
+                .ThenInclude(e => e.Venue)
                 .FirstOrDefaultAsync(m => m.BookingId == id);
+
             if (booking == null)
             {
                 return NotFound();
@@ -141,17 +239,20 @@ namespace EventEase.Controllers
             return View(booking);
         }
 
+        // POST: Bookings/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var booking = await _context.Bookings.FindAsync(id);
+
             if (booking != null)
             {
                 _context.Bookings.Remove(booking);
             }
 
             await _context.SaveChangesAsync();
+
             return RedirectToAction(nameof(Index));
         }
 

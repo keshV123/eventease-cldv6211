@@ -1,8 +1,111 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "EventEase";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container mt-5">
+
+    <div class="text-center mb-5">
+
+        <h1 class="display-3 fw-bold">
+            EventEase
+        </h1>
+
+        <p class="lead">
+            Event Management and Booking System
+        </p>
+
+        <p class="text-muted">
+            Manage venues, events, bookings, and schedules
+            through a centralized platform powered by
+            ASP.NET Core MVC and Azure Blob Storage.
+        </p>
+
+    </div>
+
+    <div class="row">
+
+        <div class="col-md-4 mb-4">
+
+            <div class="card shadow-sm h-100">
+
+                <div class="card-body text-center">
+
+                    <h3 class="card-title">
+                        Venues
+                    </h3>
+
+                    <p class="card-text">
+                        Create and manage event venues with
+                        uploaded images and venue details.
+                    </p>
+
+                    <a asp-controller="Venues"
+                           asp-action="Index"
+                           class="btn btn-primary">
+                        View Venues
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-4 mb-4">
+
+            <div class="card shadow-sm h-100">
+
+                <div class="card-body text-center">
+
+                    <h3 class="card-title">
+                        Events
+                    </h3>
+
+                    <p class="card-text">
+                        Organize upcoming events with
+                        schedules, descriptions, and
+                        promotional images.
+                    </p>
+
+                    <a asp-controller="Events"
+                           asp-action="Index"
+                           class="btn btn-success">
+                        View Events
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-4 mb-4">
+
+            <div class="card shadow-sm h-100">
+
+                <div class="card-body text-center">
+
+                    <h3 class="card-title">
+                        Bookings
+                    </h3>
+
+                    <p class="card-text">
+                        Manage customer bookings while
+                        preventing overlapping reservations.
+                    </p>
+
+                    <a asp-controller="Bookings"
+                           asp-action="Index"
+                           class="btn btn-dark">
+                        View Bookings
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
 </div>
