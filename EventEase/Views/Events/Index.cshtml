@@ -7,11 +7,42 @@
 <h1>Events</h1>
 
 <p>
-    <a asp-action="Create"
-           class="btn btn-primary">
-        Create New Event
-    </a>
+    <a asp-action="Create" class="btn btn-primary">Create New Event</a>
 </p>
+
+<form method="get" asp-action="Index" class="mb-4">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label">Event Type</label>
+            <select name="eventTypeId" class="form-select" asp-items="@(ViewData["EventTypeId"] as SelectList)">
+                <option value="">All Types</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">From Date</label>
+            <input type="date" name="fromDate" class="form-control"
+                   value="@Context.Request.Query["fromDate"]" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">To Date</label>
+            <input type="date" name="toDate" class="form-control"
+                   value="@Context.Request.Query["toDate"]" />
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="venueAvailable"
+                       value="true" id="venueAvailable"
+                       @(Context.Request.Query["venueAvailable"] == "true" ? "checked" : "") />
+                <label class="form-check-label" for="venueAvailable">
+                    Available venues only
+                </label>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-secondary w-100">Filter</button>
+        </div>
+    </div>
+</form>
 
 <div class="row">
 
@@ -44,6 +75,14 @@
                         <strong>Venue:</strong>
                         @item.Venue?.VenueName
                     </p>
+
+                    @if (item.EventType != null)
+                    {
+                        <p class="card-text">
+                            <strong>Type:</strong>
+                            @item.EventType.TypeName
+                        </p>
+                    }
 
                     <p class="card-text">
                         @item.Description

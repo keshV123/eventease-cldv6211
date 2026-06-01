@@ -42,12 +42,38 @@ namespace EventEase.Controllers
         }
 
         // GET: Events
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+            int? eventTypeId,
+            DateTime? fromDate,
+            DateTime? toDate,
+            bool venueAvailable = false)
         {
-            var appDbContext =
-                _context.Events.Include(e => e.Venue);
+            var query = _context.Events
+                .Include(e => e.Venue)
+                .Include(e => e.EventType)
+                .AsQueryable();
 
-            return View(await appDbContext.ToListAsync());
+            if (eventTypeId.HasValue)
+                query = query.Where(e => e.EventTypeId == eventTypeId);
+
+            if (fromDate.HasValue)
+                query = query.Where(e => e.Date >= fromDate.Value);
+
+            if (toDate.HasValue)
+                query = query.Where(e => e.Date <= toDate.Value);
+
+            if (venueAvailable && fromDate.HasValue && toDate.HasValue)
+            {
+                query = query.Where(e => !_context.Bookings.Any(b =>
+                    b.Event.VenueId == e.VenueId &&
+                    b.StartDate < toDate.Value &&
+                    b.EndDate > fromDate.Value));
+            }
+
+            ViewData["EventTypeId"] = new SelectList(
+                _context.EventTypes, "EventTypeId", "TypeName", eventTypeId);
+
+            return View(await query.ToListAsync());
         }
 
         // GET: Events/Details/5
@@ -74,9 +100,9 @@ namespace EventEase.Controllers
         public IActionResult Create()
         {
             ViewData["VenueId"] =
-                new SelectList(_context.Venues,
-                               "VenueId",
-                               "VenueName");
+                new SelectList(_context.Venues, "VenueId", "VenueName");
+            ViewData["EventTypeId"] =
+                new SelectList(_context.EventTypes, "EventTypeId", "TypeName");
 
             return View();
         }
@@ -85,7 +111,7 @@ namespace EventEase.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("EventId,Title,Date,Description,VenueId")]
+            [Bind("EventId,Title,Date,Description,VenueId,EventTypeId")]
             Event @event,
             IFormFile imageFile)
         {
@@ -114,10 +140,9 @@ namespace EventEase.Controllers
             }
 
             ViewData["VenueId"] =
-                new SelectList(_context.Venues,
-                               "VenueId",
-                               "VenueName",
-                               @event.VenueId);
+                new SelectList(_context.Venues, "VenueId", "VenueName", @event.VenueId);
+            ViewData["EventTypeId"] =
+                new SelectList(_context.EventTypes, "EventTypeId", "TypeName", @event.EventTypeId);
 
             return View(@event);
         }
@@ -138,10 +163,9 @@ namespace EventEase.Controllers
             }
 
             ViewData["VenueId"] =
-                new SelectList(_context.Venues,
-                               "VenueId",
-                               "VenueName",
-                               @event.VenueId);
+                new SelectList(_context.Venues, "VenueId", "VenueName", @event.VenueId);
+            ViewData["EventTypeId"] =
+                new SelectList(_context.EventTypes, "EventTypeId", "TypeName", @event.EventTypeId);
 
             return View(@event);
         }
@@ -151,7 +175,7 @@ namespace EventEase.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-            [Bind("EventId,Title,Date,ImageUrl,Description,VenueId")]
+            [Bind("EventId,Title,Date,ImageUrl,Description,VenueId,EventTypeId")]
             Event @event)
         {
             if (id != @event.EventId)
@@ -183,10 +207,9 @@ namespace EventEase.Controllers
             }
 
             ViewData["VenueId"] =
-                new SelectList(_context.Venues,
-                               "VenueId",
-                               "VenueName",
-                               @event.VenueId);
+                new SelectList(_context.Venues, "VenueId", "VenueName", @event.VenueId);
+            ViewData["EventTypeId"] =
+                new SelectList(_context.EventTypes, "EventTypeId", "TypeName", @event.EventTypeId);
 
             return View(@event);
         }
