@@ -7,22 +7,16 @@ namespace EventEase.Services
     {
         private readonly BlobContainerClient _containerClient;
 
-        public BlobService(IConfiguration configuration)
+        public BlobService(IConfiguration config)
         {
-            string connectionString =
-                configuration["AzureBlobStorage:ConnectionString"];
+            var connectionString = config.GetConnectionString("AzureStorage");
 
-            string containerName =
-                configuration["AzureBlobStorage:ContainerName"];
-
-            BlobServiceClient blobServiceClient =
-                new BlobServiceClient(connectionString);
+            var blobServiceClient = new BlobServiceClient(connectionString);
 
             _containerClient =
-                blobServiceClient.GetBlobContainerClient(containerName);
+                blobServiceClient.GetBlobContainerClient("venue-images");
 
-            _containerClient.CreateIfNotExists(
-                PublicAccessType.Blob);
+            _containerClient.CreateIfNotExists(PublicAccessType.Blob);
         }
 
         public async Task<string> UploadFileAsync(IFormFile file)
