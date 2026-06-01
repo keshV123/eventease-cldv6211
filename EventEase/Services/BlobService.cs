@@ -20,11 +20,13 @@ namespace EventEase.Services
 
             _containerClient =
                 blobServiceClient.GetBlobContainerClient(containerName);
+
+            _containerClient.CreateIfNotExists(
+                PublicAccessType.Blob);
         }
 
         public async Task<string> UploadFileAsync(IFormFile file)
         {
-            await _containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
             string fileName =
                 Guid.NewGuid().ToString() +
                 Path.GetExtension(file.FileName);
