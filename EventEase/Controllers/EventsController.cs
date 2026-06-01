@@ -43,28 +43,32 @@ namespace EventEase.Controllers
 
         // GET: Events
         public async Task<IActionResult> Index(
+            string searchString,
             int? eventTypeId,
             DateTime? fromDate,
             DateTime? toDate,
             bool venueAvailable = false)
         {
-            var query = _context.Events
-                .Include(e => e.Venue)
-                .Include(e => e.EventType)
-                .AsQueryable();
+            var events = from e in _context.Events
+                            .Include(e => e.Venue)
+                            .Include(e => e.EventType)
+                         select e;
+
+            if (!string.IsNullOrEmpty(searchString))
+                events = events.Where(e => e.Title.Contains(searchString));
 
             if (eventTypeId.HasValue)
-                query = query.Where(e => e.EventTypeId == eventTypeId);
+                events = events.Where(e => e.EventTypeId == eventTypeId);
 
             if (fromDate.HasValue)
-                query = query.Where(e => e.Date >= fromDate.Value);
+                events = events.Where(e => e.Date >= fromDate.Value);
 
             if (toDate.HasValue)
-                query = query.Where(e => e.Date <= toDate.Value);
+                events = events.Where(e => e.Date <= toDate.Value);
 
             if (venueAvailable && fromDate.HasValue && toDate.HasValue)
             {
-                query = query.Where(e => !_context.Bookings.Any(b =>
+                events = events.Where(e => !_context.Bookings.Any(b =>
                     b.Event.VenueId == e.VenueId &&
                     b.StartDate < toDate.Value &&
                     b.EndDate > fromDate.Value));
@@ -73,7 +77,7 @@ namespace EventEase.Controllers
             ViewData["EventTypeId"] = new SelectList(
                 _context.EventTypes, "EventTypeId", "TypeName", eventTypeId);
 
-            return View(await query.ToListAsync());
+            return View(await events.ToListAsync());
         }
 
         // GET: Events/Details/5
