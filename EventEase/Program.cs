@@ -1,17 +1,17 @@
 /*
- * EventEase - CLOUD Assignment Part 2
- * 
+ * EventEase - CLOUD Assignment Part 3
+ *
  * This project was developed using ASP.NET Core MVC scaffolding,
  * Microsoft documentation, Azure Blob Storage documentation,
  * and AI-assisted guidance for implementation refinement,
  * validation logic, and UI improvements.
- * 
+ *
  * Technologies used:
  * - ASP.NET Core MVC
  * - Entity Framework Core
- * - Azure Blob Storage / Azurite
- * - SQL Server LocalDB
- * 
+ * - Azure Blob Storage
+ * - Azure SQL Database
+ *
  * Author: ST10474344
  */
 using EventEase.Services;
@@ -31,7 +31,12 @@ namespace EventEase
             builder.Services.AddControllersWithViews();
 
             builder.Services.AddDbContext<AppDbContext>(options =>
-                   options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(
+                    builder.Configuration.GetConnectionString("DefaultConnection"),
+                    sqlOptions => sqlOptions.EnableRetryOnFailure(
+                        maxRetryCount: 5,
+                        maxRetryDelay: TimeSpan.FromSeconds(30),
+                        errorNumbersToAdd: null)));
 
             builder.Services.AddScoped<BlobService>();
             var app = builder.Build();
